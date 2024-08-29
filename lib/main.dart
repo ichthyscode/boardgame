@@ -1,43 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-void main() => runApp(ChessBoardApp());
+void main() => runApp(const ChessBoardApp());
 
 class ChessBoardApp extends StatelessWidget {
+  const ChessBoardApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: ChessBoardScreen(),
     );
   }
 }
 
 class ChessBoardScreen extends StatefulWidget {
+  const ChessBoardScreen({super.key});
+
   @override
-  _ChessBoardScreenState createState() => _ChessBoardScreenState();
+  ChessBoardScreenState createState() => ChessBoardScreenState();
 }
 
-class _ChessBoardScreenState extends State<ChessBoardScreen> {
-  // Define the size of the board
+class ChessBoardScreenState extends State<ChessBoardScreen> {
   static const int boardSize = 8;
-  // Define the initial position of the user block
   int userRow = 0;
   int userCol = 0;
+  final FocusNode _focusNode = FocusNode();
 
-  // Method to build the chessboard
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.requestFocus();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   Widget buildBoard() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(boardSize, (row) {
         return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(boardSize, (col) {
             bool isUserBlock = row == userRow && col == userCol;
-            return Container(
-              width: 40,
-              height: 40,
-              color: isUserBlock ? Colors.green : (row + col) % 2 == 0 ? Colors.white : Colors.black,
-              child: Center(
-                child: Text(
-                  isUserBlock ? 'U' : '',
-                  style: TextStyle(color: isUserBlock ? Colors.white : Colors.black),
+            return GestureDetector(
+              onTap: () => handleTap(row, col),
+              child: Container(
+                width: 40,
+                height: 40,
+                color: isUserBlock ? Colors.green : (row + col) % 2 == 0 ? Colors.white : Colors.black,
+                child: Center(
+                  child: Text(
+                    isUserBlock ? 'U' : '',
+                    style: TextStyle(color: isUserBlock ? Colors.white : Colors.black),
+                  ),
                 ),
               ),
             );
@@ -47,43 +67,49 @@ class _ChessBoardScreenState extends State<ChessBoardScreen> {
     );
   }
 
-  // Method to handle user movement
-  void moveUser(String direction) {
-    setState(() {
-      switch (direction) {
-        case 'up':
-          if (userRow > 0) userRow--;
-          break;
-        case 'down':
-          if (userRow < boardSize - 1) userRow++;
-          break;
-        case 'left':
-          if (userCol > 0) userCol--;
-          break;
-        case 'right':
-          if (userCol < boardSize - 1) userCol++;
-          break;
-      }
-    });
+  void handleTap(int row, int col) {
+    if ((row == userRow && (col == userCol - 1 || col == userCol + 1)) ||
+        (col == userCol && (row == userRow - 1 || row == userRow + 1))) {
+      setState(() {
+        userRow = row;
+        userCol = col;
+      });
+    }
+  }
+
+  void handleKeyboard(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      setState(() {
+        switch (event.logicalKey.keyLabel) {
+          case 'Arrow Up':
+            if (userRow > 0) userRow--;
+            break;
+          case 'Arrow Down':
+            if (userRow < boardSize - 1) userRow++;
+            break;
+          case 'Arrow Left':
+            if (userCol > 0) userCol--;
+            break;
+          case 'Arrow Right':
+            if (userCol < boardSize - 1) userCol++;
+            break;
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Chessboard Movement')),
-      body: Column(
-        children: [
-          buildBoard(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(onPressed: () => moveUser('up'), child: Text('Up')),
-              ElevatedButton(onPressed: () => moveUser('down'), child: Text('Down')),
-              ElevatedButton(onPressed: () => moveUser('left'), child: Text('Left')),
-              ElevatedButton(onPressed: () => moveUser('right'), child: Text('Right')),
-            ],
-          ),
-        ],
+      appBar: AppBar(title: const Text('Chessboard Movement')),
+      body: KeyboardListener(
+        focusNode: _focusNode,
+        onKeyEvent: (KeyEvent event) {
+          handleKeyboard(event);
+        },
+        child: Center(
+          child: buildBoard(),
+        ),
       ),
     );
   }
