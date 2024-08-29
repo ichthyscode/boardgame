@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'package:shake/shake.dart'; // Add this line
+import 'package:shake/shake.dart'; // Ensure to add this package in your pubspec.yaml
 
 void main() => runApp(const ChessBoardApp());
 
@@ -30,6 +30,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   final FocusNode _focusNode = FocusNode();
   Set<String> highlightedCells = {};
   Timer? _movementTimer;
+  bool _blinkGreen = false;
 
   @override
   void initState() {
@@ -62,6 +63,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(boardSize, (col) {
                 bool isUserBlock = row == userRow && col == userCol;
+                bool isWhiteCell = (row + col) % 2 == 0;
                 bool isHighlighted = highlightedCells.contains('$row,$col');
                 return GestureDetector(
                   onTap: () => handleTap(row, col),
@@ -70,11 +72,13 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
                     height: 20,
                     color: isUserBlock
                         ? Colors.green
-                        : isHighlighted
-                            ? Colors.purple
-                            : (row + col) % 2 == 0
-                                ? Colors.white
-                                : Colors.black,
+                        : _blinkGreen && isWhiteCell
+                            ? Colors.green
+                            : isHighlighted
+                                ? Colors.purple
+                                : isWhiteCell
+                                    ? Colors.white
+                                    : Colors.black,
                     child: Center(
                       child: Text(
                         isUserBlock ? 'U' : '',
@@ -166,26 +170,16 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   }
 
   void blinkWhiteCells() {
-    // Blink all white cells green and back to white
     setState(() {
-      for (int row = 0; row < boardSize; row++) {
-        for (int col = 0; col < boardSize; col++) {
-          if ((row + col) % 2 == 0) {
-            // Change to green
-            Future.delayed(Duration(milliseconds: 500), () {
-              setState(() {
-                highlightedCells.add('$row,$col');
-              });
-            });
-            // Change back to white
-            Future.delayed(Duration(milliseconds: 1000), () {
-              setState(() {
-                highlightedCells.remove('$row,$col');
-              });
-            });
-          }
-        }
-      }
+      _blinkGreen = true;
+    });
+
+    // Change back to normal after a short delay
+    Future.delayed(Duration(milliseconds: 500), () {
+      setState(() {
+        _blinkGreen = false;
+        highlightedCells.clear(); // Reset all highlights to normal
+      });
     });
   }
 
