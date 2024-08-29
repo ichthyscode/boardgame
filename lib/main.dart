@@ -22,7 +22,7 @@ class ChessBoardScreen extends StatefulWidget {
 }
 
 class ChessBoardScreenState extends State<ChessBoardScreen> {
-  static const int boardSize = 8;
+  static const int boardSize = 30; // Changed to 30x30
   int userRow = 0;
   int userCol = 0;
   final FocusNode _focusNode = FocusNode();
@@ -40,30 +40,35 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   }
 
   Widget buildBoard() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(boardSize, (row) {
-        return Row(
+    return SingleChildScrollView(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(boardSize, (col) {
-            bool isUserBlock = row == userRow && col == userCol;
-            return GestureDetector(
-              onTap: () => handleTap(row, col),
-              child: Container(
-                width: 40,
-                height: 40,
-                color: isUserBlock ? Colors.green : (row + col) % 2 == 0 ? Colors.white : Colors.black,
-                child: Center(
-                  child: Text(
-                    isUserBlock ? 'U' : '',
-                    style: TextStyle(color: isUserBlock ? Colors.white : Colors.black),
+          children: List.generate(boardSize, (row) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(boardSize, (col) {
+                bool isUserBlock = row == userRow && col == userCol;
+                return GestureDetector(
+                  onTap: () => handleTap(row, col),
+                  child: Container(
+                    width: 20, // Reduced size to fit more cells
+                    height: 20, // Reduced size to fit more cells
+                    color: isUserBlock ? Colors.green : (row + col) % 2 == 0 ? Colors.white : Colors.black,
+                    child: Center(
+                      child: Text(
+                        isUserBlock ? 'U' : '',
+                        style: TextStyle(color: isUserBlock ? Colors.white : Colors.black, fontSize: 10),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
             );
           }),
-        );
-      }),
+        ),
+      ),
     );
   }
 
@@ -101,7 +106,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chessboard Movement')),
+      appBar: AppBar(title: const Text('30x30 Grid Movement')),
       body: KeyboardListener(
         focusNode: _focusNode,
         onKeyEvent: (KeyEvent event) {
