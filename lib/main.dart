@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:shake/shake.dart'; // Add this line
 
 void main() => runApp(const ChessBoardApp());
 
@@ -34,6 +35,13 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   void initState() {
     super.initState();
     _focusNode.requestFocus();
+
+    // Initialize shake detector for mobile
+    ShakeDetector.autoStart(
+      onPhoneShake: () {
+        blinkWhiteCells();
+      },
+    );
   }
 
   @override
@@ -98,7 +106,11 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
 
   void handleKeyboard(KeyEvent event) {
     if (event is KeyDownEvent) {
-      startMovement(event.logicalKey.keyLabel);
+      if (event.logicalKey == LogicalKeyboardKey.space) {
+        blinkWhiteCells();
+      } else {
+        startMovement(event.logicalKey.keyLabel);
+      }
     } else if (event is KeyUpEvent) {
       stopMovement();
     }
@@ -151,6 +163,30 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
         highlightedCells.add(cell);
       }
     }
+  }
+
+  void blinkWhiteCells() {
+    // Blink all white cells green and back to white
+    setState(() {
+      for (int row = 0; row < boardSize; row++) {
+        for (int col = 0; col < boardSize; col++) {
+          if ((row + col) % 2 == 0) {
+            // Change to green
+            Future.delayed(Duration(milliseconds: 500), () {
+              setState(() {
+                highlightedCells.add('$row,$col');
+              });
+            });
+            // Change back to white
+            Future.delayed(Duration(milliseconds: 1000), () {
+              setState(() {
+                highlightedCells.remove('$row,$col');
+              });
+            });
+          }
+        }
+      }
+    });
   }
 
   @override
