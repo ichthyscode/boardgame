@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 
 void main() => runApp(const ChessBoardApp());
 
@@ -27,6 +28,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   int userCol = 0;
   final FocusNode _focusNode = FocusNode();
   Set<String> highlightedCells = {};
+  Timer? _movementTimer;
 
   @override
   void initState() {
@@ -37,6 +39,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _movementTimer?.cancel();
     super.dispose();
   }
 
@@ -57,15 +60,19 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
                   child: Container(
                     width: 20,
                     height: 20,
-                    color: isUserBlock 
-                      ? Colors.green 
-                      : isHighlighted 
-                        ? Colors.purple 
-                        : (row + col) % 2 == 0 ? Colors.white : Colors.black,
+                    color: isUserBlock
+                        ? Colors.green
+                        : isHighlighted
+                            ? Colors.purple
+                            : (row + col) % 2 == 0
+                                ? Colors.white
+                                : Colors.black,
                     child: Center(
                       child: Text(
                         isUserBlock ? 'U' : '',
-                        style: TextStyle(color: isUserBlock ? Colors.white : Colors.black, fontSize: 10),
+                        style: TextStyle(
+                            color: isUserBlock ? Colors.white : Colors.black,
+                            fontSize: 10),
                       ),
                     ),
                   ),
@@ -91,32 +98,52 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
 
   void handleKeyboard(KeyEvent event) {
     if (event is KeyDownEvent) {
-      setState(() {
-        switch (event.logicalKey.keyLabel) {
-          case 'Arrow Up':
-            if (userRow > 0) userRow--;
-            break;
-          case 'Arrow Down':
-            if (userRow < boardSize - 1) userRow++;
-            break;
-          case 'Arrow Left':
-            if (userCol > 0) userCol--;
-            break;
-          case 'Arrow Right':
-            if (userCol < boardSize - 1) userCol++;
-            break;
-        }
-        updateHighlightedCells();
-      });
+      startMovement(event.logicalKey.keyLabel);
+    } else if (event is KeyUpEvent) {
+      stopMovement();
     }
+  }
+
+  void startMovement(String keyLabel) {
+    move(keyLabel); // Initial move
+    _movementTimer?.cancel(); // Cancel any existing timer
+    _movementTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+      move(keyLabel);
+    });
+  }
+
+  void stopMovement() {
+    _movementTimer?.cancel();
+  }
+
+  void move(String keyLabel) {
+    setState(() {
+      switch (keyLabel) {
+        case 'Arrow Up':
+          if (userRow > 0) userRow--;
+          break;
+        case 'Arrow Down':
+          if (userRow < boardSize - 1) userRow++;
+          break;
+        case 'Arrow Left':
+          if (userCol > 0) userCol--;
+          break;
+        case 'Arrow Right':
+          if (userCol < boardSize - 1) userCol++;
+          break;
+      }
+      updateHighlightedCells();
+    });
   }
 
   void updateHighlightedCells() {
     List<String> surroundingCells = [
-      '${userRow-1},${userCol}', '${userRow+1},${userCol}',
-      '${userRow},${userCol-1}', '${userRow},${userCol+1}'
+      '${userRow - 1},${userCol}',
+      '${userRow + 1},${userCol}',
+      '${userRow},${userCol - 1}',
+      '${userRow},${userCol + 1}'
     ];
-    
+
     for (String cell in surroundingCells) {
       if (highlightedCells.contains(cell)) {
         highlightedCells.remove(cell);
