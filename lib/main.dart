@@ -22,10 +22,11 @@ class ChessBoardScreen extends StatefulWidget {
 }
 
 class ChessBoardScreenState extends State<ChessBoardScreen> {
-  static const int boardSize = 30; // Changed to 30x30
+  static const int boardSize = 30;
   int userRow = 0;
   int userCol = 0;
   final FocusNode _focusNode = FocusNode();
+  Set<String> highlightedCells = {};
 
   @override
   void initState() {
@@ -50,12 +51,17 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(boardSize, (col) {
                 bool isUserBlock = row == userRow && col == userCol;
+                bool isHighlighted = highlightedCells.contains('$row,$col');
                 return GestureDetector(
                   onTap: () => handleTap(row, col),
                   child: Container(
-                    width: 20, // Reduced size to fit more cells
-                    height: 20, // Reduced size to fit more cells
-                    color: isUserBlock ? Colors.green : (row + col) % 2 == 0 ? Colors.white : Colors.black,
+                    width: 20,
+                    height: 20,
+                    color: isUserBlock 
+                      ? Colors.green 
+                      : isHighlighted 
+                        ? Colors.purple 
+                        : (row + col) % 2 == 0 ? Colors.white : Colors.black,
                     child: Center(
                       child: Text(
                         isUserBlock ? 'U' : '',
@@ -78,6 +84,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
       setState(() {
         userRow = row;
         userCol = col;
+        updateHighlightedCells();
       });
     }
   }
@@ -99,7 +106,23 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
             if (userCol < boardSize - 1) userCol++;
             break;
         }
+        updateHighlightedCells();
       });
+    }
+  }
+
+  void updateHighlightedCells() {
+    List<String> surroundingCells = [
+      '${userRow-1},${userCol}', '${userRow+1},${userCol}',
+      '${userRow},${userCol-1}', '${userRow},${userCol+1}'
+    ];
+    
+    for (String cell in surroundingCells) {
+      if (highlightedCells.contains(cell)) {
+        highlightedCells.remove(cell);
+      } else {
+        highlightedCells.add(cell);
+      }
     }
   }
 
