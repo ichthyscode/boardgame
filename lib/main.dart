@@ -24,7 +24,8 @@ class ChessBoardScreen extends StatefulWidget {
 }
 
 class ChessBoardScreenState extends State<ChessBoardScreen> {
-  int boardSize = 30;
+  late int boardSize;
+  late double cellSize;
   int userRow = 0;
   int userCol = 0;
   final FocusNode _focusNode = FocusNode();
@@ -51,6 +52,26 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     super.dispose();
   }
 
+  void calculateBoardSize(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final shortestSide = screenSize.shortestSide;
+    final longestSide = screenSize.longestSide;
+
+    // Adjust these values to change the grid density
+    const desiredCellSize = 30.0;
+    const minBoardSize = 10;
+    const maxBoardSize = 50;
+
+    boardSize = (shortestSide / desiredCellSize).floor();
+    boardSize = boardSize.clamp(minBoardSize, maxBoardSize);
+
+    cellSize = shortestSide / boardSize;
+
+    // Ensure the user is within the new board boundaries
+    userRow = userRow.clamp(0, boardSize - 1);
+    userCol = userCol.clamp(0, boardSize - 1);
+  }
+
   Widget buildBoard() {
     return SingleChildScrollView(
       child: SingleChildScrollView(
@@ -67,23 +88,23 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
                 return GestureDetector(
                   onTap: () => handleTap(row, col),
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: cellSize,
+                    height: cellSize,
                     color: isUserBlock
                         ? Colors.green
                         : _blinkGreen && isWhiteCell
-                            ? Colors.green
-                            : isHighlighted
-                                ? Colors.purple
-                                : isWhiteCell
-                                    ? Colors.white
-                                    : Colors.black,
+                        ? Colors.green
+                        : isHighlighted
+                        ? Colors.purple
+                        : isWhiteCell
+                        ? Colors.white
+                        : Colors.black,
                     child: Center(
                       child: Text(
                         isUserBlock ? 'U' : '',
                         style: TextStyle(
                             color: isUserBlock ? Colors.white : Colors.black,
-                            fontSize: 10),
+                            fontSize: cellSize / 2),
                       ),
                     ),
                   ),
@@ -131,19 +152,23 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     _movementTimer?.cancel();
   }
 
-  void move(String keyLabel) {
+  void move(String direction) {
     setState(() {
-      switch (keyLabel) {
+      switch (direction) {
         case 'Arrow Up':
+        case 'Up':
           if (userRow > 0) userRow--;
           break;
         case 'Arrow Down':
+        case 'Down':
           if (userRow < boardSize - 1) userRow++;
           break;
         case 'Arrow Left':
+        case 'Left':
           if (userCol > 0) userCol--;
           break;
         case 'Arrow Right':
+        case 'Right':
           if (userCol < boardSize - 1) userCol++;
           break;
       }
@@ -181,19 +206,30 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     });
   }
 
-  void changeBoardSize(int change) {
-    setState(() {
-      boardSize += change;
-      if (boardSize < 5) boardSize = 5;
-      if (boardSize > 50) boardSize = 50;
-      userRow = userRow.clamp(0, boardSize - 1);
-      userCol = userCol.clamp(0, boardSize - 1);
-      highlightedCells.clear();
-    });
+  void handleSwipe(DragUpdateDetails details) {
+    const int sensitivity = 5;
+    if (details.delta.dx.abs() > sensitivity || details.delta.dy.abs() > sensitivity) {
+      if (details.delta.dx.abs() > details.delta.dy.abs()) {
+        // Horizontal swipe
+        if (details.delta.dx > 0) {
+          move('Right');
+        } else {
+          move('Left');
+        }
+      } else {
+        // Vertical swipe
+        if (details.delta.dy > 0) {
+          move('Down');
+        } else {
+          move('Up');
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    calculateBoardSize(context);
     return Scaffold(
       appBar: AppBar(title: Text('${boardSize}x$boardSize Grid Movement')),
       body: KeyboardListener(
@@ -201,29 +237,13 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
         onKeyEvent: (KeyEvent event) {
           handleKeyboard(event);
         },
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: buildBoard(),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () => changeBoardSize(-1),
-                  child: const Text('Decrease Size'),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: () => changeBoardSize(1),
-                  child: const Text('Increase Size'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
+        child: GestureDetector(
+          onPanUpdate: (details) {
+            handleSwipe(details);
+          },
+          child: Center(
+            child: buildBoard(),
+          ),
         ),
       ),
     );
