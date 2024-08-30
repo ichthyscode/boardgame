@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'package:shake/shake.dart'; // Ensure to add this package in your pubspec.yaml
+import 'package:shake/shake.dart';
 
 void main() => runApp(const ChessBoardApp());
 
@@ -24,7 +24,7 @@ class ChessBoardScreen extends StatefulWidget {
 }
 
 class ChessBoardScreenState extends State<ChessBoardScreen> {
-  static const int boardSize = 30;
+  int boardSize = 30;
   int userRow = 0;
   int userCol = 0;
   final FocusNode _focusNode = FocusNode();
@@ -37,7 +37,6 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     super.initState();
     _focusNode.requestFocus();
 
-    // Initialize shake detector for mobile
     ShakeDetector.autoStart(
       onPhoneShake: () {
         blinkWhiteCells();
@@ -121,9 +120,9 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   }
 
   void startMovement(String keyLabel) {
-    move(keyLabel); // Initial move
-    _movementTimer?.cancel(); // Cancel any existing timer
-    _movementTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+    move(keyLabel);
+    _movementTimer?.cancel();
+    _movementTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       move(keyLabel);
     });
   }
@@ -154,10 +153,10 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
 
   void updateHighlightedCells() {
     List<String> surroundingCells = [
-      '${userRow - 1},${userCol}',
-      '${userRow + 1},${userCol}',
-      '${userRow},${userCol - 1}',
-      '${userRow},${userCol + 1}'
+      '${userRow - 1},$userCol',
+      '${userRow + 1},$userCol',
+      '$userRow,${userCol - 1}',
+      '$userRow,${userCol + 1}'
     ];
 
     for (String cell in surroundingCells) {
@@ -174,26 +173,57 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
       _blinkGreen = true;
     });
 
-    // Change back to normal after a short delay
-    Future.delayed(Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 500), () {
       setState(() {
         _blinkGreen = false;
-        highlightedCells.clear(); // Reset all highlights to normal
+        highlightedCells.clear();
       });
+    });
+  }
+
+  void changeBoardSize(int change) {
+    setState(() {
+      boardSize += change;
+      if (boardSize < 5) boardSize = 5;
+      if (boardSize > 50) boardSize = 50;
+      userRow = userRow.clamp(0, boardSize - 1);
+      userCol = userCol.clamp(0, boardSize - 1);
+      highlightedCells.clear();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('30x30 Grid Movement')),
+      appBar: AppBar(title: Text('${boardSize}x$boardSize Grid Movement')),
       body: KeyboardListener(
         focusNode: _focusNode,
         onKeyEvent: (KeyEvent event) {
           handleKeyboard(event);
         },
-        child: Center(
-          child: buildBoard(),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: buildBoard(),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () => changeBoardSize(-1),
+                  child: const Text('Decrease Size'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: () => changeBoardSize(1),
+                  child: const Text('Increase Size'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
