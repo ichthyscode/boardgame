@@ -57,6 +57,16 @@ Below are examples of how generative AI can assist in programming small games:
 - **Debugging Assistance**: If you encounter an error, you can ask the AI, 'Why is my loop not functioning?' and receive suggestions for fixing the issue.
 - **Learning Resources**: The AI can provide links to tutorials or documentation based on your current challenges, helping you learn more effectively.
 
+## Board Game Description
+
+### 30x30 Grid Movement Game
+
+This project includes a simple board game implemented in Flutter, featuring a 30x30 grid. The player controls a green block ('U') that can move around the grid using arrow keys on a desktop or by tapping adjacent cells on a mobile device. The game includes the following features:
+
+- **Movement**: Use arrow keys or touch input to navigate the grid.
+- **Highlighting**: Surrounding cells turn purple when the player moves.
+- **Blinking Effect**: Pressing the spacebar or shaking the device causes all white cells to blink green before resetting to their original colors.
+
 ## Contribution Guidelines
 
 We welcome contributions from anyone interested in expanding this project. To contribute:
