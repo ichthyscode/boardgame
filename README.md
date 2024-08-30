@@ -1,4 +1,4 @@
-![Alt text](images/boardgame_screen001.png)
+
 
 # Experimenting with Small Games and Generative AI
 
@@ -21,6 +21,8 @@ In this project, you can experiment with a variety of small games, including but
 
 
 ## Board Game Description
+
+![Alt text](images/boardgame_screen001.png)
 
 ### 30x30 Grid Movement Game
 
