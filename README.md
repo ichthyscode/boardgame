@@ -1,3 +1,5 @@
+![Alt text](images/boardgame_screen001.png)
+
 # Experimenting with Small Games and Generative AI
 
 ## Project Overview
