@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:shake/shake.dart';
 
@@ -38,11 +39,13 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     super.initState();
     _focusNode.requestFocus();
 
-    ShakeDetector.autoStart(
-      onPhoneShake: () {
-        blinkWhiteCells();
-      },
-    );
+    if (!kIsWeb) {
+      ShakeDetector.autoStart(
+        onPhoneShake: () {
+          clearEverything();
+        },
+      );
+    }
   }
 
   @override
@@ -55,9 +58,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   void calculateBoardSize(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final shortestSide = screenSize.shortestSide;
-    final longestSide = screenSize.longestSide;
 
-    // Adjust these values to change the grid density
     const desiredCellSize = 30.0;
     const minBoardSize = 10;
     const maxBoardSize = 50;
@@ -67,7 +68,6 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
 
     cellSize = shortestSide / boardSize;
 
-    // Ensure the user is within the new board boundaries
     userRow = userRow.clamp(0, boardSize - 1);
     userCol = userCol.clamp(0, boardSize - 1);
   }
@@ -131,7 +131,7 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
   void handleKeyboard(KeyEvent event) {
     if (event is KeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.space) {
-        blinkWhiteCells();
+        clearEverything();
       } else {
         startMovement(event.logicalKey.keyLabel);
       }
@@ -193,15 +193,15 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     }
   }
 
-  void blinkWhiteCells() {
+  void clearEverything() {
     setState(() {
       _blinkGreen = true;
+      highlightedCells.clear();
     });
 
     Future.delayed(const Duration(milliseconds: 500), () {
       setState(() {
         _blinkGreen = false;
-        highlightedCells.clear();
       });
     });
   }
@@ -232,19 +232,33 @@ class ChessBoardScreenState extends State<ChessBoardScreen> {
     calculateBoardSize(context);
     return Scaffold(
       appBar: AppBar(title: Text('${boardSize}x$boardSize Grid Movement')),
-      body: KeyboardListener(
-        focusNode: _focusNode,
-        onKeyEvent: (KeyEvent event) {
-          handleKeyboard(event);
-        },
-        child: GestureDetector(
-          onPanUpdate: (details) {
-            handleSwipe(details);
-          },
-          child: Center(
-            child: buildBoard(),
+      body: Column(
+        children: [
+          Expanded(
+            child: KeyboardListener(
+              focusNode: _focusNode,
+              onKeyEvent: (KeyEvent event) {
+                handleKeyboard(event);
+              },
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  handleSwipe(details);
+                },
+                child: Center(
+                  child: buildBoard(),
+                ),
+              ),
+            ),
           ),
-        ),
+          if (kIsWeb)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: clearEverything,
+                child: const Text('Clear Everything'),
+              ),
+            ),
+        ],
       ),
     );
   }
