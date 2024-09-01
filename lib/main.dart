@@ -1,6 +1,6 @@
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
-import 'package:flame/input.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -25,11 +25,11 @@ class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
     await super.onLoad();
 
     // Load background
-    background = SpriteComponent(
-      sprite: await loadSprite('background.png'),
-      size: size,
-    );
-    add(background);
+    // background = SpriteComponent(
+    //   sprite: await loadSprite('background.png'),
+    //   size: size,
+    // );
+    // add(background);
 
     // Create board
     boardComponent = PositionComponent();
@@ -65,7 +65,7 @@ class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
 
   @override
   void onTapDown(TapDownInfo info) {
-    Vector2 tapPosition = info.eventPosition.game;
+    Vector2 tapPosition = info.eventPosition.global;
     double cellSize = size.x / boardSize;
     int tappedRow = (tapPosition.y / cellSize).floor();
     int tappedCol = (tapPosition.x / cellSize).floor();
@@ -82,17 +82,17 @@ class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
   @override
   void onPanUpdate(DragUpdateInfo info) {
     const int sensitivity = 5;
-    if (info.delta.game.length > sensitivity) {
-      if (info.delta.game.x.abs() > info.delta.game.y.abs()) {
+    if (info.delta.global.length > sensitivity) {
+      if (info.delta.global.x.abs() > info.delta.global.y.abs()) {
         // Horizontal swipe
-        if (info.delta.game.x > 0) {
+        if (info.delta.global.x > 0) {
           move('Right');
         } else {
           move('Left');
         }
       } else {
         // Vertical swipe
-        if (info.delta.game.y > 0) {
+        if (info.delta.global.y > 0) {
           move('Down');
         } else {
           move('Up');
