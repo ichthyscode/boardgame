@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -13,28 +14,24 @@ void main() {
 
 class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
   static const int boardSize = 30;
-  late final SpriteComponent background;
   late final PositionComponent boardComponent;
   int userRow = 0;
   int userCol = 0;
   Set<String> highlightedCells = {};
   bool _blinkGreen = false;
+  late final Timer blinkTimer;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Load background
-    // background = SpriteComponent(
-    //   sprite: await loadSprite('background.png'),
-    //   size: size,
-    // );
-    // add(background);
-
-    // Create board
     boardComponent = PositionComponent();
     add(boardComponent);
     createBoard();
+
+    blinkTimer = Timer(0.5, onTick: () {
+      _blinkGreen = !_blinkGreen;
+    }, repeat: true);
   }
 
   void createBoard() {
@@ -54,6 +51,11 @@ class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
   }
 
   void updateUserPosition() {
+    boardComponent.children.whereType<RectangleComponent>().forEach((cell) {
+      cell.removeFromParent();
+    });
+    createBoard();
+
     double cellSize = size.x / boardSize;
     RectangleComponent userCell = RectangleComponent(
       position: Vector2(userCol * cellSize, userRow * cellSize),
@@ -61,6 +63,33 @@ class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
       paint: Paint()..color = Colors.green,
     );
     boardComponent.add(userCell);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    renderHighlightedCells(canvas);
+  }
+
+  void renderHighlightedCells(Canvas canvas) {
+    double cellSize = size.x / boardSize;
+    final purplePaint = Paint()..color = Colors.purple.withOpacity(0.5);
+
+    for (String cell in highlightedCells) {
+      List<String> coords = cell.split(',');
+      int row = int.parse(coords[0]);
+      int col = int.parse(coords[1]);
+      canvas.drawRect(
+        Rect.fromLTWH(col * cellSize, row * cellSize, cellSize, cellSize),
+        purplePaint,
+      );
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    blinkTimer.update(dt);
   }
 
   @override
@@ -135,14 +164,15 @@ class ChessBoardGame extends FlameGame with TapDetector, PanDetector {
         highlightedCells.add(cell);
       }
     }
-    // Update highlighted cells visually
-    // This part needs to be implemented
   }
 
   void clearEverything() {
     _blinkGreen = true;
     highlightedCells.clear();
-    // Implement blinking effect
-    // This part needs to be implemented
+    blinkTimer.start();
+    Future.delayed(const Duration(seconds: 1), () {
+      _blinkGreen = false;
+      blinkTimer.stop();
+    });
   }
 }
